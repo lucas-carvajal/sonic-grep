@@ -1,3 +1,6 @@
+mod config;
+
+use config::Config;
 use sonic_grep::search;
 use sonic_grep::search_case_insensitive;
 use std::env;
@@ -16,31 +19,6 @@ fn main() {
     if let Err(e) = run(config) {
         eprintln!("Application error: {e}");
         process::exit(1);
-    }
-}
-
-struct Config {
-    query: String,
-    file_path: String,
-    ignore_case: bool,
-}
-
-impl Config {
-    fn build(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 3 {
-            return Err("Not enough arguments!");
-        }
-
-        let query = args[1].clone();
-        let file_path = args[2].clone();
-
-        let ignore_case = env::var("IGNORE_CASE").is_ok();
-
-        Ok(Config {
-            query,
-            file_path,
-            ignore_case,
-        })
     }
 }
 
