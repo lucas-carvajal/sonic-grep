@@ -4,6 +4,7 @@ pub struct Config {
     pub query: String,
     pub file_path: String,
     pub ignore_case: bool,
+    pub num_workers: u16,
 }
 
 impl Config {
@@ -17,10 +18,13 @@ impl Config {
 
         let ignore_case = env::var("IGNORE_CASE").is_ok();
 
+        let num_workers = 8;
+
         Ok(Config {
             query,
             file_path,
             ignore_case,
+            num_workers,
         })
     }
 }

@@ -1,7 +1,7 @@
 # Producer Consumer Parallelism Feature
 1. Main thread launches N threads (default 1, configurable via CLI options)
-2. Main thread reades in lines from the file and sending them via a shared channel to the worker threads for processing. When the reader is done reading in all lines, it drops the its sender, thus letting the workers know that the input is done. Then, after processing all open messages, all workers will also drop their senders, thus letting the main thread know that the processing is done.
-3. Worker threads send results via channel to main thread.
+2. Main thread reads in lines from the file and sends them via a shared channel to the worker threads for processing. When the reader is done reading in all lines, it drops the its sender, thus letting the workers know that the input is done.
+3. Worker threads send results via channel to main thread. After processing all open messages, all workers will also drop their senders, thus letting the main thread know that the processing is done.
 4. Main thread sorts all received results by line number, and prints them out in order.
 
 ### Creating Channels
