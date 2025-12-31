@@ -1,3 +1,24 @@
+pub mod config;
+
+use crate::config::Config;
+use std::sync::Arc;
+
+pub fn prepare_search_text(config: Arc<Config>, text: String) -> String {
+    if config.ignore_case {
+        return text.to_lowercase();
+    } else {
+        return text;
+    }
+}
+
+pub fn prepare_search_query(config: Arc<Config>, query: String) -> String {
+    if config.ignore_case {
+        return query.to_lowercase();
+    } else {
+        return query;
+    }
+}
+
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
     let mut results = Vec::new();
 
