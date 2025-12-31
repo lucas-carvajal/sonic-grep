@@ -3,17 +3,17 @@ use std::sync::Arc;
 
 pub fn prepare_search_text(config: &Arc<Config>, text: &str) -> String {
     if config.ignore_case {
-        return text.to_lowercase();
+        text.to_lowercase()
     } else {
-        return text.to_string();
+        text.to_string()
     }
 }
 
 pub fn prepare_search_query(config: &Arc<Config>, query: &str) -> String {
     if config.ignore_case {
-        return query.to_lowercase();
+        query.to_lowercase()
     } else {
-        return query.to_string();
+        query.to_string()
     }
 }
 
