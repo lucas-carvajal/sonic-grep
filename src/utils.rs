@@ -1,21 +1,19 @@
-pub mod config;
-
 use crate::config::Config;
 use std::sync::Arc;
 
-pub fn prepare_search_text(config: Arc<Config>, text: String) -> String {
+pub fn prepare_search_text(config: &Arc<Config>, text: &str) -> String {
     if config.ignore_case {
         return text.to_lowercase();
     } else {
-        return text;
+        return text.to_string();
     }
 }
 
-pub fn prepare_search_query(config: Arc<Config>, query: String) -> String {
+pub fn prepare_search_query(config: &Arc<Config>, query: &str) -> String {
     if config.ignore_case {
         return query.to_lowercase();
     } else {
-        return query;
+        return query.to_string();
     }
 }
 
