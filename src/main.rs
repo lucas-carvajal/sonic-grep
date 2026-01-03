@@ -3,15 +3,13 @@ mod utils;
 
 use config::Config;
 use crossbeam_channel::{bounded, unbounded};
-use std::convert::From;
 use std::env;
 use std::error::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::process;
 use std::sync::Arc;
-use utils::prepare_search_query;
-use utils::prepare_search_text;
+use utils::search_hit;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -28,33 +26,38 @@ fn main() {
 }
 
 fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let (work_tx, work_rx) = bounded::<Message>(usize::from(config.num_workers * 16));
+    let bound = config.num_workers.saturating_mul(8).max(100) as usize;
+    let (work_tx, work_rx) = bounded::<Message>(bound);
     let (result_tx, result_rx) = unbounded::<Message>();
 
     let shared_config = Arc::new(config);
+
+    let mut worker_handles = Vec::new();
 
     for _ in 0..shared_config.num_workers {
         let work_rx_clone = work_rx.clone();
         let result_tx_clone = result_tx.clone();
         let config_clone = shared_config.clone();
 
-        std::thread::spawn(move || {
+        let handle = std::thread::spawn(move || {
             for message in work_rx_clone {
-                let search_text = prepare_search_text(&config_clone, &message.text);
-                let search_query = prepare_search_query(&config_clone, &config_clone.query);
-                if search_text.contains(search_query.as_str()) {
-                    let _ = result_tx_clone.send(message);
+                if search_hit(&config_clone, &message.text) {
+                    if result_tx_clone.send(message).is_err() {
+                        break;
+                    };
                 }
             }
             // Loop ends when work_rx_clone is disconnected
             // result_tx_clone dropped automatically here
         });
+
+        worker_handles.push(handle);
     }
 
     // Read in lines from file and send to workers channel
     let file = File::open(shared_config.file_path.as_str())?;
     let reader = BufReader::new(file);
-    let mut line_counter = 0;
+    let mut line_counter = 1;
 
     for line in reader.lines() {
         let line = line?;
@@ -69,7 +72,13 @@ fn run(config: Config) -> Result<(), Box<dyn Error>> {
         };
         line_counter += 1;
     }
+
+    // Drop work and result channel sender and join all worker threads
     drop(work_tx);
+    for handle in worker_handles {
+        let _ = handle.join();
+    }
+    drop(result_tx);
 
     // Read results to vector, sort them and print them
     let mut results: Vec<Message> = result_rx.into_iter().collect();
@@ -86,7 +95,8 @@ fn run(config: Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[derive(Debug, Clone)]
 struct Message {
     text: String,
-    line: u32,
+    line: usize,
 }

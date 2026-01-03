@@ -1,22 +1,14 @@
 use crate::config::Config;
-use std::sync::Arc;
 
-pub fn prepare_search_text(config: &Arc<Config>, text: &str) -> String {
+pub fn search_hit(config: &Config, line: &str) -> bool {
     if config.ignore_case {
-        text.to_lowercase()
+        line.to_lowercase().contains(&config.query_lowercased)
     } else {
-        text.to_string()
+        line.contains(&config.query)
     }
 }
 
-pub fn prepare_search_query(config: &Arc<Config>, query: &str) -> String {
-    if config.ignore_case {
-        query.to_lowercase()
-    } else {
-        query.to_string()
-    }
-}
-
+// TODO write new test for search_hit() and get rid of all this
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
     let mut results = Vec::new();
 
