@@ -6,13 +6,12 @@ use crossbeam_channel::{bounded, unbounded};
 use std::convert::From;
 use std::env;
 use std::error::Error;
-use std::fs;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::process;
 use std::sync::Arc;
 use utils::prepare_search_query;
 use utils::prepare_search_text;
-use utils::search;
-use utils::search_case_insensitive;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -52,18 +51,36 @@ fn run(config: Config) -> Result<(), Box<dyn Error>> {
         });
     }
 
-    // TODO
+    // Read in lines from file and send to workers channel
+    let file = File::open(shared_config.file_path.as_str())?;
+    let reader = BufReader::new(file);
+    let mut line_counter = 0;
 
-    let contents = fs::read_to_string(shared_config.file_path.as_str())?;
+    for line in reader.lines() {
+        let line = line?;
+        if work_tx
+            .send(Message {
+                text: line,
+                line: line_counter,
+            })
+            .is_err()
+        {
+            break;
+        };
+        line_counter += 1;
+    }
+    drop(work_tx);
 
-    let results = if shared_config.clone().ignore_case {
-        search_case_insensitive(shared_config.query.as_str(), &contents)
-    } else {
-        search(shared_config.query.as_str(), &contents)
-    };
+    // Read results to vector, sort them and print them
+    let mut results: Vec<Message> = result_rx.into_iter().collect();
+    results.sort_by_key(|msg| msg.line);
 
-    for line in results {
-        println!("{line}");
+    println!(
+        "Found the following occurences of '{}' in file {}",
+        shared_config.query, shared_config.file_path
+    );
+    for result in results {
+        println!("Line {}: {}", result.line, result.text);
     }
 
     Ok(())

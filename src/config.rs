@@ -1,5 +1,6 @@
 use std::env;
 
+#[derive(Debug, Clone)]
 pub struct Config {
     pub query: String,
     pub file_path: String,
